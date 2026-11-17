@@ -1,9 +1,13 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
-from .models import Course, Submission, Choice
+from .models import Course, Submission, Choice, Enrollment
 
 def submit(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
+    enrollment = Enrollment.objects.filter(user=request.user, course=course).first()
+    if not enrollment:
+        enrollment = Enrollment.objects.create(user=request.user, course=course)
+        
     if request.method == 'POST':
         selected_ids = []
         for key, value in request.POST.lists():
@@ -11,8 +15,7 @@ def submit(request, course_id):
                 for val in value:
                     selected_ids.append(int(val))
         
-        # Создаем сабмит и привязываем выбранные варианты ответов
-        submission = Submission.objects.create(enrollment_id=1) # или корректный enrollment
+        submission = Submission.objects.create(enrollment=enrollment)
         submission.choices.set(selected_ids)
         submission.save()
         
